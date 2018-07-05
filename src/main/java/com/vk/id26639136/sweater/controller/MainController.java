@@ -1,4 +1,4 @@
-package com.vk.id26639136.sweater;
+package com.vk.id26639136.sweater.controller;
 
 import com.vk.id26639136.sweater.domain.Message;
 import com.vk.id26639136.sweater.repos.MessageRepo;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.Map;
 
 @Controller
-public class GreetingController {
+public class MainController {
     @Autowired
     private MessageRepo messageRepo;
 
