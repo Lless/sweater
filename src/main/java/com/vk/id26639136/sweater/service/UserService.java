@@ -37,7 +37,7 @@ public class UserService implements UserDetailsService {
     public boolean addUser(User user) {
         User userFromDb = userRepo.findByUsername(user.getUsername());
 
-        if(userFromDb != null)
+        if (userFromDb != null)
             return false;
         user.setActive(true);
         user.setRoles(Collections.singleton(Role.USER));
@@ -49,13 +49,14 @@ public class UserService implements UserDetailsService {
     }
 
     private void sendMessage(User user) {
-        if (!StringUtils.isEmpty(user.getEmail())){
-            String  message = String.format(
-                    "Hello, %s! \n "+
+        if (!StringUtils.isEmpty(user.getEmail())) {
+            String message = String.format(
+                    "Hello, %s! \n" +
                             "Welcome to Sweater. Please, confirm your email: Http://localhost:8080/activate/%s",
-                    user.getUsername(), user.getActivationCode()
+                    user.getUsername(),
+                    user.getActivationCode()
             );
-            mailSender.send(user.getEmail(),"Activation code", message);
+            mailSender.send(user.getEmail(), "Activation code", message);
         }
     }
 
@@ -74,7 +75,7 @@ public class UserService implements UserDetailsService {
         return userRepo.findAll();
     }
 
-    public void saveUser(User user, String username, Map<String,String> form) {
+    public void saveUser(User user, String username, Map<String, String> form) {
         user.setUsername(username);
 
         Set<String> roles = Arrays.stream(Role.values())
@@ -92,22 +93,22 @@ public class UserService implements UserDetailsService {
     public void updateProfile(User user, String password, String email) {
         String userEmail = user.getEmail();
 
-        boolean isEmailChanged = ( email!=null && (!email.equals(userEmail))) ||
-                (userEmail!=null && !userEmail.equals(email));
+        boolean isEmailChanged = (email != null && !email.equals(userEmail)) ||
+                (userEmail != null && !userEmail.equals(email));
 
         if (isEmailChanged) {
             user.setEmail(email);
             if (!StringUtils.isEmpty(email)) {
-                user.setActivationCode(UUID.randomUUID().toString() );
+                user.setActivationCode(UUID.randomUUID().toString());
             }
         }
 
         if (!StringUtils.isEmpty(password)) {
             user.setPassword(password);
         }
-        sendMessage(user);
+        userRepo.save(user);
         if (isEmailChanged) {
-            userRepo.save(user);
+            sendMessage(user);
         }
     }
 }
