@@ -5,7 +5,6 @@ import com.vk.id26639136.sweater.domain.dto.CaptchaResponceDto;
 import com.vk.id26639136.sweater.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -22,7 +21,7 @@ import java.util.Map;
 
 @Controller
 public class RegistrationController {
-    private final static String CAPTCHA_URL =  "https://www.google.com/recaptcha/api/siteverify?secret=%s&responce=%s";
+    private final static String CAPTCHA_URL =  "https://www.google.com/recaptcha/api/siteverify?secret=%s&response=%s";
     @Autowired
     private UserService userService;
 
@@ -45,10 +44,10 @@ public class RegistrationController {
             BindingResult bindingResult,
             Model model) {
         String url = String.format(CAPTCHA_URL, secret, captchaResponse);
-        CaptchaResponceDto responce = restTemplate.postForObject(url, Collections.EMPTY_LIST, CaptchaResponceDto.class);
-
+        CaptchaResponceDto responce = restTemplate.postForObject(url, Collections.emptyList(), CaptchaResponceDto.class);
         if (!responce.isSuccess()) {
             model.addAttribute("captchaError", "Captcha incorrect");
+            responce.getErrorCodes().forEach(System.out::println);
         }
         boolean isConfirmEmpty = StringUtils.isEmpty(passwordConfirm);
         if (isConfirmEmpty) {
@@ -57,7 +56,7 @@ public class RegistrationController {
         if (user.getPassword() != null && !user.getPassword().equals(passwordConfirm)) {
             model.addAttribute("passwordError","Passwords are not equal");
         }
-        if (isConfirmEmpty|| bindingResult.hasErrors() || !responce.isSuccess()) {
+        if (isConfirmEmpty|| bindingResult.hasErrors() || !responce.isSuccess() ) {
             Map<String, String> errors = ControllerUtils.getErrors(bindingResult);
             model.mergeAttributes(errors);
             return "registration";
