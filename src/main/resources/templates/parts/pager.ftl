@@ -5,9 +5,9 @@
         <#if pageNumber lt 6>
             <#assign body = [1, 2, 3, 4, 5, 6, 7, -1, totalPages]>
         <#elseif pageNumber gt totalPages - 5 >
-            <#assign body = [1, -1 ,  totalPages-6, totalPages-5, totalPages-4, totalPages-3, totalPages-2, totalPages-1, totalPages]>
+            <#assign body = [1, -1, totalPages-6, totalPages-5, totalPages-4, totalPages-3, totalPages-2, totalPages-1, totalPages]>
         <#else>
-            <#assign body = [1, -1 , pageNumber-2, pageNumber-1, pageNumber, pageNumber+1, pageNumber+2, -1, totalPages]>
+            <#assign body = [1, -1, pageNumber-2, pageNumber-1, pageNumber, pageNumber+1, pageNumber+2, -1, totalPages]>
         </#if>
     <#else>
         <#assign body = 1..totalPages>
@@ -22,9 +22,9 @@
                     <li class="page-item active">
                         <a class="page-link" href="#" tabindex="-1">${p}</a>
                     </li>
-                <#elseif p == -1 >
+                <#elseif p == -1>
                     <li class="page-item disabled">
-                        <a class="page-link" href="${url}?page=${p - 1}&size=${page.getSize()}" tabindex="-1">...</a>
+                        <a class="page-link" href="#" tabindex="-1">...</a>
                     </li>
                 <#else>
                     <li class="page-item">
