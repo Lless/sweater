@@ -9,14 +9,17 @@
         <#else>
             <#assign body = [1, -1, pageNumber-2, pageNumber-1, pageNumber, pageNumber+1, pageNumber+2, -1, totalPages]>
         </#if>
+    <#elseif totalPages = 0>
+        <#assign body = [1]>
     <#else>
         <#assign body = 1..totalPages>
     </#if>
-    <div class="mt-3">
-        <ul class="pagination">
-            <li class="page-item disabled">
-                <a class="page-link" href="#" tabindex="-1">Страницы</a>
-            </li>
+    <div class="container mt-3">
+        <div class="row">
+            <ul class="pagination col justify-content-center">
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1">Страницы</a>
+                </li>
             <#list body as p>
                 <#if (p - 1) == page.getNumber()>
                     <li class="page-item active">
@@ -32,12 +35,12 @@
                     </li>
                 </#if>
             </#list>
-        </ul>
+            </ul>
 
-        <ul class="pagination">
-            <li class="page-item disabled">
-                <a class="page-link" href="#" tabindex="-1">Элементов на странице</a>
-            </li>
+            <ul class="pagination col justify-content-center">
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1">Элементов на странице</a>
+                </li>
             <#list [5, 10, 25, 50] as c>
                 <#if c == page.getSize()>
                     <li class="page-item active">
@@ -49,6 +52,7 @@
                     </li>
                 </#if>
             </#list>
-        </ul>
+            </ul>
+        </div>
     </div>
 </#macro>

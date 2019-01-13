@@ -2,7 +2,7 @@ package com.vk.id26639136.sweater.controller;
 
 import com.vk.id26639136.sweater.domain.Message;
 import com.vk.id26639136.sweater.domain.User;
-import com.vk.id26639136.sweater.repos.MessageRepo;
+import com.vk.id26639136.sweater.service.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -24,13 +24,12 @@ import javax.validation.Valid;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 @Controller
-public class MainController {
+public class MessageController {
     @Autowired
-    private MessageRepo messageRepo;
+    private MessageService messageService;
 
     @Value("${upload.path}")
     private String uploadPath;
@@ -46,13 +45,7 @@ public class MainController {
             Model model,
             @PageableDefault(sort = { "id" }, direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<Message> page;
-
-        if (filter != null && !filter.isEmpty()) {
-            page = messageRepo.findByTag(filter, pageable);
-        } else {
-            page = messageRepo.findAll(pageable);
-        }
+        Page<Message> page = messageService.messageList(pageable,filter);
 
         model.addAttribute("page", page);
         model.addAttribute("url", "/main");
@@ -67,9 +60,11 @@ public class MainController {
             @Valid Message message,
             BindingResult bindingResult,
             Model model,
-            @RequestParam("file") MultipartFile file
+            @RequestParam("file") MultipartFile file,
+            @PageableDefault(sort = { "id" }, direction = Sort.Direction.DESC) Pageable pageable
     ) throws IOException {
         message.setAuthor(user);
+
 
         if (bindingResult.hasErrors()) {
             Map<String, String> errorsMap = ControllerUtils.getErrors(bindingResult);
@@ -81,12 +76,13 @@ public class MainController {
 
             model.addAttribute("message", null);
 
-            messageRepo.save(message);
+            messageService.save(message);
         }
 
-        Iterable<Message> messages = messageRepo.findAll();
+        Page<Message> page = messageService.messageList(pageable,"");
 
-        model.addAttribute("messages", messages);
+        model.addAttribute("page", page);
+        model.addAttribute("url","/main");
 
         return "main";
     }
@@ -111,20 +107,21 @@ public class MainController {
     @GetMapping("/user-messages/{user}")
     public String userMessages(
             @AuthenticationPrincipal User currentUser,
-            @PathVariable User user,
+            @PathVariable User author,
             Model model,
-            @RequestParam(required = false) Message message
+            @RequestParam(required = false) Message message,
+            @PageableDefault(sort = { "id" }, direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Set<Message> messages = user.getMessages();
+        Page<Message> page = messageService.messageListForUser(pageable, currentUser, author);
 
-        model.addAttribute("userChannel", user);
-        model.addAttribute("subscriptionsCount", user.getSubscriptions().size());
-        model.addAttribute("subscribersCount", user.getSubscribers().size());
-        model.addAttribute("isSubscriber", user.getSubscribers().contains(currentUser));
-        model.addAttribute("messages", messages);
+        model.addAttribute("userChannel", author);
+        model.addAttribute("subscriptionsCount", author.getSubscriptions().size());
+        model.addAttribute("subscribersCount", author.getSubscribers().size());
+        model.addAttribute("isSubscriber", author.getSubscribers().contains(currentUser));
+        model.addAttribute("messages", page);
         model.addAttribute("message", message);
-        model.addAttribute("isCurrentUser", currentUser.equals(user));
-
+        model.addAttribute("isCurrentUser", currentUser.equals(author));
+        model.addAttribute("url","/user-messages/" + author.getId());
         return "userMessages";
     }
 
@@ -148,7 +145,7 @@ public class MainController {
 
             saveFile(message, file);
 
-            messageRepo.save(message);
+            messageService.save(message);
         }
 
         return "redirect:/user-messages/" + user;

@@ -1,6 +1,6 @@
 package com.vk.id26639136.sweater;
 
-import com.vk.id26639136.sweater.controller.MainController;
+import com.vk.id26639136.sweater.controller.MessageController;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +32,7 @@ public class MainControllerTest  {
     private MockMvc mockMvc;
 
     @Autowired
-    private MainController mainController;
+    private MessageController mainController;
 
     @Test
     public void mainPageTest() throws Exception{
