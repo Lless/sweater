@@ -2,6 +2,7 @@ package com.vk.id26639136.sweater.controller;
 
 import com.vk.id26639136.sweater.domain.Message;
 import com.vk.id26639136.sweater.domain.User;
+import com.vk.id26639136.sweater.domain.dto.MessageDto;
 import com.vk.id26639136.sweater.service.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,16 +15,17 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.validation.Valid;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Controller
@@ -43,9 +45,10 @@ public class MessageController {
     public String main(
             @RequestParam(required = false, defaultValue = "") String filter,
             Model model,
-            @PageableDefault(sort = { "id" }, direction = Sort.Direction.DESC) Pageable pageable
+            @PageableDefault(sort = { "id" }, direction = Sort.Direction.DESC) Pageable pageable,
+            @AuthenticationPrincipal User user
     ) {
-        Page<Message> page = messageService.messageList(pageable,filter);
+        Page<MessageDto> page = messageService.messageList(pageable, filter, user);
 
         model.addAttribute("page", page);
         model.addAttribute("url", "/main");
@@ -65,7 +68,6 @@ public class MessageController {
     ) throws IOException {
         message.setAuthor(user);
 
-
         if (bindingResult.hasErrors()) {
             Map<String, String> errorsMap = ControllerUtils.getErrors(bindingResult);
 
@@ -79,7 +81,7 @@ public class MessageController {
             messageService.save(message);
         }
 
-        Page<Message> page = messageService.messageList(pageable,"");
+        Page<MessageDto> page = messageService.messageList(pageable,"",user);
 
         model.addAttribute("page", page);
         model.addAttribute("url","/main");
@@ -104,7 +106,7 @@ public class MessageController {
         }
     }
 
-    @GetMapping("/user-messages/{user}")
+    @GetMapping("/user-messages/{author}")
     public String userMessages(
             @AuthenticationPrincipal User currentUser,
             @PathVariable User author,
@@ -112,23 +114,24 @@ public class MessageController {
             @RequestParam(required = false) Message message,
             @PageableDefault(sort = { "id" }, direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<Message> page = messageService.messageListForUser(pageable, currentUser, author);
+        Page<MessageDto> page = messageService.messageListForUser(pageable, currentUser, author);
 
         model.addAttribute("userChannel", author);
         model.addAttribute("subscriptionsCount", author.getSubscriptions().size());
         model.addAttribute("subscribersCount", author.getSubscribers().size());
         model.addAttribute("isSubscriber", author.getSubscribers().contains(currentUser));
-        model.addAttribute("messages", page);
+        model.addAttribute("page", page);
         model.addAttribute("message", message);
         model.addAttribute("isCurrentUser", currentUser.equals(author));
-        model.addAttribute("url","/user-messages/" + author.getId());
+        model.addAttribute("url", "/user-messages/" + author.getId());
+
         return "userMessages";
     }
 
-    @PostMapping("/user-messages/{user}")
+    @PostMapping("/user-messages/{author}")
     public String updateMessage(
             @AuthenticationPrincipal User currentUser,
-            @PathVariable Long user,
+            @PathVariable User author,
             @RequestParam("id") Message message,
             @RequestParam("text") String text,
             @RequestParam("tag") String tag,
@@ -148,6 +151,30 @@ public class MessageController {
             messageService.save(message);
         }
 
-        return "redirect:/user-messages/" + user;
+        return "redirect:/user-messages/" + author.getId();
+    }
+
+    @GetMapping("/messages/{message}/like")
+    public String like(
+            @AuthenticationPrincipal User currentUser,
+            @PathVariable Message message,
+            RedirectAttributes redirectAttributes,
+            @RequestHeader(required = false) String referer
+    ) {
+        Set<User> likes = message.getLikes();
+
+        if (likes.contains(currentUser)) {
+            likes.remove(currentUser);
+        } else {
+            likes.add(currentUser);
+        }
+
+        UriComponents components = UriComponentsBuilder.fromHttpUrl(referer).build();
+
+        components.getQueryParams()
+                .entrySet()
+                .forEach(pair -> redirectAttributes.addAttribute(pair.getKey(), pair.getValue()));
+
+        return "redirect:" + components.getPath();
     }
 }
